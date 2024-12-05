@@ -68,11 +68,11 @@ In this exercise, you will provision a website using the Azure portal. The Web A
 
 -   A storage account deployed in the Azure portal Portal
 
-### Task 3: Update the configuration strings
+### Task 3: Update the configuration settins
 
 #### Tasks to complete
 
--   Add a new **App setting** with the following values:
+-   Add a new **App setting** for the Contoso Financial Web Application with the following values:
 
     -   Key: **AzureQueueConnectionString**
 
@@ -136,7 +136,7 @@ In this exercise, you will provision an Azure API App using the Azure portal. Th
 
 #### Tasks to complete
 
--   Add a new App Setting with the following values:
+-   Add a new App Setting for the Contoso Financial Web Application with the following values:
 
     -   Key: offersAPIUrl
 
@@ -214,12 +214,3 @@ In this exercise, you will provision the admin website to be used by employees t
 
 -   The web app should load, and any orders that are submitted through the web app should show in the admin portal with the ability to download the PDF
 
-## After the hands-on lab 
-
-Duration: 10 minutes
-
-1.  If provisioned using the Azure Developer Kit in an Azure VM, delete the resource group your Azure Host VM is running in.
-
-2.  If running on your own Developer Kit, delete all resource groups from the Azure portal that you created during the execution of this lab.
-
-You should follow all steps provided *before* performing the Hands-on lab.
