@@ -1,0 +1,140 @@
+# resource group
+rg=ContosoFinanceApp
+location=centralindia
+
+echo -e "\e[1;36mCreating $rg Resource Group in $location...\e[0m"
+az group create -n $rg -l $location -o none
+
+# sql server
+sqlsrv_name=wadsqlsrv$RANDOM
+admin_username=waddahs
+admin_password=Test#123#123
+echo -e "\e[1;36mCreating $sqlsrv_name SQL server...\e[0m"
+az sql server create -g $rg -n $sqlsrv_name -l $location --admin-user $admin_username --admin-password $admin_password -o none
+az sql server firewall-rule create -g $rg -n AllowAll -s $sqlsrv_name --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0 -o none
+
+# sql db
+dbname=ContosoFinanceWebDB
+echo -e "\e[1;36mCreating $dbname SQL Database...\e[0m"
+az sql db create -g $rg -n $dbname --server $sqlsrv_name --backup-storage-redundancy local --compute-model Provisioned --edition Basic -o none
+sqlconstr=$(az sql db show-connection-string --client ado.net -a SqlPassword -n $dbname -s $sqlsrv_name -o tsv)
+sqlconstr=$(echo "$sqlconstr" | sed "s/<username>/$admin_username/" | sed "s/<password>/$admin_password/")
+
+# Storage
+storname=wadstor$RANDOM
+echo -e "\e[1;36mCreating $storname Storage Account...\e[0m"
+az storage account create -g $rg -n $storname --access-tier Hot --sku Standard_LRS -o none
+storconstr=$(az storage account show-connection-string -g $rg -n $storname --key key1 -o tsv)
+storconstr=$(echo $storconstr | cut -d';' -f1-4)
+storkey=$(az storage account keys list -g $rg -n $storname --query [0].value -o tsv)
+
+# Web Application
+webname=wadweb-$RANDOM
+echo -e "\e[1;36mCreating $webname Frontend Web App...\e[0m"
+az appservice plan create -g $rg -n $webname-plan --sku S1 --number-of-workers 1 -o none
+az webapp create -g $rg -n $webname -p $webname-plan -o none
+
+# Web App Settings
+echo -e "\e[1;36mCreating AzureQueueConnectionString App Setting on $webname Frontend Web App...\e[0m"
+az webapp config appsettings set -g $rg -n $webname --settings AzureQueueConnectionString="$storconstr" -o none
+echo -e "\e[1;36mCreating ContosoFinance Connection String on $webname Frontend Web App...\e[0m"
+az webapp config connection-string set -g $rg -n $webname --connection-string-type SQLAzure --settings ContosoFinance="$sqlconstr" -o none
+webhostname=$(az webapp show -g $rg -n $webname --query hostNames -o tsv)
+
+# Download web application from git
+echo -e "\e[1;36mDownloading the code of $webname Frontend Web App from github repo and zipping it...\e[0m"
+git clone https://github.com/wshamroukh/contosofinanceweb
+
+# Zipping the application folder
+sudo apt install -y zip
+cd contosofinanceweb
+zip -r contosofinanceweb.zip *
+cd ..
+
+# Web Deployment
+echo -e "\e[1;36mDeploying code to $webname Frontend Web App...\e[0m"
+az webapp deploy -g $rg -n $webname --src-path contosofinanceweb/contosofinanceweb.zip --type zip -o none
+rm -rf contosofinanceweb
+
+echo -e "\e[1;35mVisit https://$webhostname/ and click on PRODUCTS. If you get the list of products, it means everything is OK. You can ignore the CORS error you get as we will fix it later...\e[0m"
+
+# API
+apiname=wadapi-$RANDOM
+echo -e "\e[1;36mCreating $apiname API Web App...\e[0m"
+az appservice plan create -g $rg -n $apiname-plan --sku S1 --number-of-workers 1 -o none
+az webapp create -g $rg -n $apiname -p $apiname-plan -o none
+az webapp cors add -g $rg -n $apiname --allowed-origins "*" -o none
+apihostname=$(az webapp show -g $rg -n $apiname --query hostNames -o tsv)
+
+# Api App Settings
+echo -e "\e[1;36mCreating ContosoFinance Connection String on $apiname API Web App...\e[0m"
+az webapp config connection-string set -g $rg -n $apiname --connection-string-type SQLAzure --settings ContosoFinance="$sqlconstr" -o none
+
+# Download api application from git
+echo -e "\e[1;36mDownloading the code of $apiname Backend API App from github repo and zipping it...\e[0m"
+git clone https://github.com/wshamroukh/contosofinanceoffers
+cd contosofinanceoffers
+zip -r contosofinanceoffers.zip *
+cd ..
+
+# API Deployment
+echo -e "\e[1;36mDeploying code to $apiname Backend API App...\e[0m"
+az webapp deploy -g $rg -n $apiname --src-path contosofinanceoffers/contosofinanceoffers.zip --type zip -o none
+rm -rf contosofinanceoffers
+
+# Web App Settings
+echo -e "\e[1;36mCreating offersAPIUrl config setting on $webname Frontend Web App to be able to retrieve offers from $apiname Backend API App...\e[0m"
+az webapp config appsettings set -g $rg -n $webname --settings offersAPIUrl="https://$apihostname/api/get" -o none
+
+echo -e "\e[1;35mVisit https://$webhostname/ and on the homepage, you should see the latest offers populated from the offers API. It may take a few seconds before it shows the offers on the homepage...\e[0m"
+
+# # Function App
+# funname=wadfunapp-$RANDOM
+# echo -e "\e[1;36mDeploying code to $funname Function App...\e[0m"
+# az functionapp create -g $rg -n $funname --storage-account $funstor --consumption-plan-location $location --runtime dotnet-isolated --functions-version 4
+
+# #https://learn.microsoft.com/en-us/azure/azure-functions/create-first-function-cli-csharp?tabs=windows%2Cazure-cli#install-the-azure-functions-core-tools
+
+# # download function app from git
+# git clone https://github.com/wshamroukh/contosofinancefunction
+# cd contosofinancefunction && rm README.md && mv project.json host.json
+# func azure functionapp publish wadfunc --dotnet-isolated
+# # zip -r contosofinancefunction.zip *
+# cd ..
+# rm contosofinancefunction -rf
+
+# # function app Deployment
+# az webapp deploy -g $rg -n $funname --src-path contosofinancefunction/contosofinancefunction.zip --type zip
+
+# # function App Settings
+# az webapp config appsettings set -g $rg -n $funname --settings contosofinancestorage="storconstr"
+# az webapp config connection-string set -g $rg -n $funname --connection-string-type SQLAzure --settings ContosoFinance="$sqlconstr"
+
+# Admin
+adminname=wadadmin-$RANDOM
+echo -e "\e[1;36mDeploying $adminname Admin portal Web App...\e[0m"
+az appservice plan create -g $rg -n $adminname-plan --sku S1 --number-of-workers 1 -o none
+az webapp create -g $rg -n $adminname -p $adminname-plan -o none
+adminhostname=$(az webapp show -g $rg -n $adminname --query hostNames -o tsv)
+
+# Admin connection string
+echo -e "\e[1;36mCreating ContosoFinance connection string on $adminname Admin portal App...\e[0m"
+az webapp config connection-string set -g $rg -n $adminname --connection-string-type SQLAzure --settings ContosoFinance="$sqlconstr" -o none
+
+# download admin from github
+echo -e "\e[1;36mDownloading the code of $adminname Admin Portal App from github repo and zipping it...\e[0m"
+git clone https://github.com/wshamroukh/contosofinanceadmin
+cd contosofinanceadmin
+zip -r contosofinanceadmin.zip *
+cd ..
+
+# admin app Deployment
+echo -e "\e[1;36mDeploying code to $adminname Portal App...\e[0m"
+az webapp deploy -g $rg -n $adminname --src-path contosofinanceadmin/contosofinanceadmin.zip --type zip -o none
+rm -rf contosofinanceadmin
+
+echo -e "\e[1;35mVisit https://$adminhostname/ to confirm it works fine..\e[0m"
+
+echo -e "\e[1;35mVisit https://$webhostname/ and on the homepage under offer view the details of one of the offers, then add it to cart, hit apply, then fill up the form, submit, and then click complete application...\e[0m"
+echo -e "\e[1;35mVisit https://$adminhostname/ to confirm that you have received the order..\e[0m"
+
