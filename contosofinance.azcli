@@ -46,7 +46,7 @@ echo -e "\e[1;36mDownloading the code of $webname Frontend Web App from github r
 git clone https://github.com/wshamroukh/contosofinanceweb
 
 # Zipping the application folder
-sudo apt install -y zip
+#sudo apt install -y zip
 cd contosofinanceweb
 zip -r contosofinanceweb.zip *
 cd ..
@@ -88,39 +88,6 @@ az webapp config appsettings set -g $rg -n $webname --settings offersAPIUrl="htt
 
 echo -e "\e[1;35mVisit https://$webhostname/ and on the homepage, you should see the latest offers populated from the offers API. It may take a few seconds before it shows the offers on the homepage...\e[0m"
 
-# # Function App
-# funname=wadfunapp-$RANDOM
-# echo -e "\e[1;36mDeploying code to $funname Function App...\e[0m"
-# az functionapp list-runtimes --os-type windows -o table
-# az functionapp create -g $rg -n $funname -s $storname --disable-app-insights false --consumption-plan-location $location --functions-version 4 --os-type Windows --runtime dotnet --runtime-version 8 -o none
-
-# # Function App Settings
-# echo -e "\e[1;36mCreating contosofinancestorage config setting on $funname Function App to connect to $storname queues...\e[0m"
-# az functionapp config appsettings set -g $rg -n $funname --settings contosofinancestorage="$storconstr" -o none
-# echo -e "\e[1;36mCreating ContosoFinance Connection String on $funname Function App...\e[0m"
-# az webapp config connection-string set -g $rg -n $funname --connection-string-type SQLAzure --settings ContosoFinance="$sqlconstr" -o none
-
-# # # download function app from git
-# git clone https://github.com/wshamroukh/contosofinancefunction
-# # On azure portal selec the funcation app, overview, create function, select Azure Queue Storage trigger, next, Function Name: QueueTriggerGeneratePDF, Queue Name: receiptgenerator, Sotrage account connection: AzureWebJosStorage, hit create.
-# #
-
-# # #https://learn.microsoft.com/en-us/azure/azure-functions/create-first-function-cli-csharp?tabs=windows%2Cazure-cli#install-the-azure-functions-core-tools
-
-
-# # cd contosofinancefunction && rm README.md && mv project.json host.json
-# # func azure functionapp publish wadfunc --dotnet-isolated
-# # # zip -r contosofinancefunction.zip *
-# # cd ..
-# # rm contosofinancefunction -rf
-
-# # # function app Deployment
-# # az webapp deploy -g $rg -n $funname --src-path contosofinancefunction/contosofinancefunction.zip --type zip
-
-# # # function App Settings
-# # az webapp config appsettings set -g $rg -n $funname --settings contosofinancestorage="storconstr"
-# # az webapp config connection-string set -g $rg -n $funname --connection-string-type SQLAzure --settings ContosoFinance="$sqlconstr"
-
 # Admin
 adminname=wadadmin-$RANDOM
 echo -e "\e[1;36mDeploying $adminname Admin portal Web App...\e[0m"
@@ -149,3 +116,17 @@ echo -e "\e[1;35mVisit https://$adminhostname/ to confirm it works fine..\e[0m"
 echo -e "\e[1;35mVisit https://$webhostname/ and on the homepage under offer view the details of one of the offers, then add it to cart, hit apply, then fill up the form, submit, and then click complete application...\e[0m"
 echo -e "\e[1;35mVisit https://$adminhostname/ to confirm that you have received the order..\e[0m"
 
+# # Function App
+# funname=wadfunapp-$RANDOM
+# echo -e "\e[1;36mDeploying code to $funname Function App...\e[0m"
+# az functionapp create -g $rg -n $funname -s $storname --disable-app-insights false --consumption-plan-location $location --functions-version 4 --os-type Windows --runtime dotnet --runtime-version 8 -o none
+
+# # Function App Settings
+# echo -e "\e[1;36mCreating contosofinancestorage config setting on $funname Function App to connect to $storname queues...\e[0m"
+# az functionapp config appsettings set -g $rg -n $funname --settings contosofinancestorage="$storconstr" -o none
+# echo -e "\e[1;36mCreating ContosoFinance Connection String on $funname Function App...\e[0m"
+# az webapp config connection-string set -g $rg -n $funname --connection-string-type SQLAzure --settings ContosoFinance="$sqlconstr" -o none
+
+# # # # download function app from git
+# # git clone https://github.com/wshamroukh/contosofinancefunction /mnt/c/temp/contosofunction
+# # # On azure portal selec the funcation app, overview, create function, select Azure Queue Storage trigger, next, Function Name: QueueTriggerGeneratePDF, Queue Name: receiptgenerator, Sotrage account connection: AzureWebJosStorage, hit create.
