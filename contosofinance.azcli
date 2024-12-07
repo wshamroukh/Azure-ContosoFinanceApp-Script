@@ -130,3 +130,4 @@ echo -e "\e[1;35mVisit https://$adminhostname/ to confirm that you have received
 # # # # download function app from git
 # # git clone https://github.com/wshamroukh/contosofinancefunction /mnt/c/temp/contosofunction
 # # # On azure portal selec the funcation app, overview, create function, select Azure Queue Storage trigger, next, Function Name: QueueTriggerGeneratePDF, Queue Name: receiptgenerator, Sotrage account connection: AzureWebJosStorage, hit create.
+#az group delete -g $rg -y --no-wait
