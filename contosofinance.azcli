@@ -2,6 +2,8 @@
 rg=ContosoFinanceApp
 location=centralindia
 
+myip=$(curl -s4 https://ifconfig.co/)
+
 echo -e "\e[1;36mCreating $rg Resource Group in $location...\e[0m"
 az group create -n $rg -l $location -o none
 
@@ -12,6 +14,7 @@ admin_password=Test#123#123
 echo -e "\e[1;36mCreating $sqlsrv_name SQL server...\e[0m"
 az sql server create -g $rg -n $sqlsrv_name -l $location --admin-user $admin_username --admin-password $admin_password -o none
 az sql server firewall-rule create -g $rg -n AllowAll -s $sqlsrv_name --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0 -o none
+az sql server firewall-rule create -g $rg -n AllowMyIP -s $sqlsrv_name --start-ip-address $myip --end-ip-address $myip -o none
 
 # sql db
 dbname=ContosoFinanceWebDB
@@ -116,18 +119,28 @@ echo -e "\e[1;35mVisit https://$adminhostname/ to confirm it works fine..\e[0m"
 echo -e "\e[1;35mVisit https://$webhostname/ and on the homepage under offer view the details of one of the offers, then add it to cart, hit apply, then fill up the form, submit, and then click complete application...\e[0m"
 echo -e "\e[1;35mVisit https://$adminhostname/ to confirm that you have received the order..\e[0m"
 
-# # Function App
-# funname=wadfunapp-$RANDOM
-# echo -e "\e[1;36mDeploying code to $funname Function App...\e[0m"
-# az functionapp create -g $rg -n $funname -s $storname --disable-app-insights false --consumption-plan-location $location --functions-version 4 --os-type Windows --runtime dotnet --runtime-version 8 -o none
+# Function App
+funname=wadfunapp-$RANDOM
+echo -e "\e[1;36mDeploying code to $funname Function App...\e[0m"
+az functionapp create -g $rg -n $funname -s $storname --disable-app-insights false --consumption-plan-location $location --functions-version 4 --os-type Windows --runtime dotnet --runtime-version 8 -o none
 
-# # Function App Settings
-# echo -e "\e[1;36mCreating contosofinancestorage config setting on $funname Function App to connect to $storname queues...\e[0m"
-# az functionapp config appsettings set -g $rg -n $funname --settings contosofinancestorage="$storconstr" -o none
-# echo -e "\e[1;36mCreating ContosoFinance Connection String on $funname Function App...\e[0m"
-# az webapp config connection-string set -g $rg -n $funname --connection-string-type SQLAzure --settings ContosoFinance="$sqlconstr" -o none
+# Function App Settings
+echo -e "\e[1;36mCreating contosofinancestorage config setting on $funname Function App to connect to $storname queues...\e[0m"
+az functionapp config appsettings set -g $rg -n $funname --settings contosofinancestorage="$storconstr" -o none
+echo -e "\e[1;36mDowngrading FUNCTIONS_EXTENSION_VERSION config setting on $funname Function App to "~1"...\e[0m"
+az functionapp config appsettings set -g $rg -n $funname --settings FUNCTIONS_EXTENSION_VERSION="~1" -o none
+az functionapp stop -g $rg -n $funname -o none
+az functionapp start -g $rg -n $funname -o none
+echo -e "\e[1;36mCreating ContosoFinance Connection String on $funname Function App...\e[0m"
+az webapp config connection-string set -g $rg -n $funname --connection-string-type SQLAzure --settings ContosoFinance="$sqlconstr" -o none
 
-# # # # download function app from git
-# # git clone https://github.com/wshamroukh/contosofinancefunction /mnt/c/temp/contosofunction
-# # # On azure portal selec the funcation app, overview, create function, select Azure Queue Storage trigger, next, Function Name: QueueTriggerGeneratePDF, Queue Name: receiptgenerator, Sotrage account connection: AzureWebJosStorage, hit create.
+# Download function application from git
+echo -e "\e[1;36mDownloading the code of $funname Function App from github repo...\e[0m"
+git clone https://github.com/wshamroukh/contosofinancefunction
+echo -e "\e[1;36mOn azure portal selec the funcation app, overview, create function, select Queue trigger: C# Azure Queue Storage trigger, next, Function Name: QueueTriggerGeneratePDF, Queue Name: receiptgenerator, Sotrage account connection: contosofinancestorage, hit create.\e[0m"
+echo -e "\e[1;36mUpload the files from contosofinancefunction: CreatePdfReport.csx, project.json, run.csx, StorageMethods.csx, ViewModels.csx\e[0m"
+echo -e "\e[1;36mThen Make sure each file content is available, if not, update the content manually\e[0m"
+
+# cleanup
+# rm -rf contosofinancefunction
 #az group delete -g $rg -y --no-wait
