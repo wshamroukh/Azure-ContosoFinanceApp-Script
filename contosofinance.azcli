@@ -137,9 +137,10 @@ az webapp config connection-string set -g $rg -n $funname --connection-string-ty
 # Download function application from git
 echo -e "\e[1;36mDownloading the code of $funname Function App from github repo...\e[0m"
 git clone https://github.com/wshamroukh/contosofinancefunction
-echo -e "\e[1;36mOn azure portal selec the funcation app, overview, create function, select Queue trigger: C# Azure Queue Storage trigger, next, Function Name: QueueTriggerGeneratePDF, Queue Name: receiptgenerator, Sotrage account connection: contosofinancestorage, hit create.\e[0m"
-echo -e "\e[1;36mUpload the files from contosofinancefunction: CreatePdfReport.csx, project.json, run.csx, StorageMethods.csx, ViewModels.csx\e[0m"
+echo -e "\e[1;36mOn azure portal select the funcation app $funname under $rg resource group, under overview click on create function, select Queue trigger: C# Azure Queue Storage trigger, then click next, Function Name: QueueTriggerGeneratePDF, Queue Name: receiptgenerator, Sotrage account connection: contosofinancestorage, hit create.\e[0m"
+echo -e "\e[1;36mUpload the files from local contosofinancefunction folder: CreatePdfReport.csx, project.json, run.csx, StorageMethods.csx, ViewModels.csx\e[0m"
 echo -e "\e[1;36mThen Make sure each file content is available, if not, update the content manually\e[0m"
+echo -e "\e[1;36mNavigate to the main website https://$webhostname/ and submit a new application. Then head to the admin portal https://$adminhostname/ you should be able now to download the PDF of the new application\e[0m"
 
 # cleanup
 # rm -rf contosofinancefunction
