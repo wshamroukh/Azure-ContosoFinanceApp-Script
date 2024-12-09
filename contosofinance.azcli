@@ -9,7 +9,7 @@ az group create -n $rg -l $location -o none
 
 # sql server
 sqlsrv_name=wadsqlsrv$RANDOM
-admin_username=waddahs
+admin_username=$(whoami)
 admin_password=Test#123#123
 echo -e "\e[1;36mCreating $sqlsrv_name SQL server...\e[0m"
 az sql server create -g $rg -n $sqlsrv_name -l $location --admin-user $admin_username --admin-password $admin_password -o none
@@ -32,7 +32,7 @@ storconstr=$(echo $storconstr | cut -d';' -f1-4)
 storkey=$(az storage account keys list -g $rg -n $storname --query [0].value -o tsv)
 
 # Web Application
-webname=wadweb-$RANDOM
+webname=wadweb$RANDOM
 echo -e "\e[1;36mCreating $webname Frontend Web App...\e[0m"
 az appservice plan create -g $rg -n $webname-plan --sku S1 --number-of-workers 1 -o none
 az webapp create -g $rg -n $webname -p $webname-plan -o none
@@ -62,7 +62,7 @@ rm -rf contosofinanceweb
 echo -e "\e[1;35mVisit https://$webhostname/ and click on PRODUCTS. If you get the list of products, it means everything is OK. You can ignore the CORS error you get as we will fix it later...\e[0m"
 
 # API
-apiname=wadapi-$RANDOM
+apiname=wadapi$RANDOM
 echo -e "\e[1;36mCreating $apiname API Web App...\e[0m"
 az appservice plan create -g $rg -n $apiname-plan --sku S1 --number-of-workers 1 -o none
 az webapp create -g $rg -n $apiname -p $apiname-plan -o none
@@ -92,7 +92,7 @@ az webapp config appsettings set -g $rg -n $webname --settings offersAPIUrl="htt
 echo -e "\e[1;35mVisit https://$webhostname/ and on the homepage, you should see the latest offers populated from the offers API. It may take a few seconds before it shows the offers on the homepage...\e[0m"
 
 # Admin
-adminname=wadadmin-$RANDOM
+adminname=wadadmin$RANDOM
 echo -e "\e[1;36mDeploying $adminname Admin portal Web App...\e[0m"
 az appservice plan create -g $rg -n $adminname-plan --sku S1 --number-of-workers 1 -o none
 az webapp create -g $rg -n $adminname -p $adminname-plan -o none
@@ -120,7 +120,7 @@ echo -e "\e[1;35mVisit https://$webhostname/ and on the homepage under offer vie
 echo -e "\e[1;35mVisit https://$adminhostname/ to confirm that you have received the order..\e[0m"
 
 # Function App
-funname=wadfunapp-$RANDOM
+funname=wadfunapp$RANDOM
 echo -e "\e[1;36mDeploying code to $funname Function App...\e[0m"
 az functionapp create -g $rg -n $funname -s $storname --disable-app-insights false --consumption-plan-location $location --functions-version 4 --os-type Windows --runtime dotnet --runtime-version 8 -o none
 
